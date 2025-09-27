@@ -3,9 +3,13 @@ let currentColumn = null;
 // -------------------- Modal Handling --------------------
 function openAddModal(column) {
   currentColumn = column;
-  document.getElementById('taskText').value = '';
+  const textBox = document.getElementById('taskText');
+  textBox.value = '';
   document.getElementById('addModal').style.display = 'block';
+  // wait for modal to show, then focus
+  setTimeout(() => textBox.focus(), 50);
 }
+
 
 function closeAddModal() {
   document.getElementById('addModal').style.display = 'none';
@@ -222,6 +226,8 @@ function resetColumn(column) {
   }
   saveAllTasks();
 }
+
+
 
 setInterval(resetTasks, 1000);
 
