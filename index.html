@@ -2,58 +2,56 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Task Tracker</title>
+  <title>Task Manager</title>
   <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body class="dark">
-  <div class="container">
-    <!-- Dailies Column -->
-    <div class="column" id="dailies">
-      <div class="header">
-        <h2>Dailies</h2>
-        <button class="btn" onclick="openAddModal('dailies')">Add</button>
-      </div>
-      <p class="subtext">Resets in: <span id="dailies-timer"></span></p>
-      <div class="tasks" id="dailies-tasks"></div>
-    </div>
 
-    <!-- Weeklies Column -->
-    <div class="column" id="weeklies">
-      <div class="header">
-        <h2>Weeklies</h2>
-        <button class="btn" onclick="openAddModal('weeklies')">Add</button>
-      </div>
-      <p class="subtext">Resets in: <span id="weeklies-timer"></span></p>
-      <div class="tasks" id="weeklies-tasks"></div>
+<div class="container">
+  <div class="column" id="dailies-column">
+    <div class="header">
+      <h2>Dailies</h2>
+      <span class="subtext" id="dailies-timer"></span>
+      <button class="btn btn-primary" onclick="openAddModal('dailies')">Add</button>
     </div>
-
-    <!-- Monthlies Column -->
-    <div class="column" id="monthlies">
-      <div class="header">
-        <h2>Monthlies</h2>
-        <button class="btn" onclick="openAddModal('monthlies')">Add</button>
-      </div>
-      <p class="subtext">Resets in: <span id="monthlies-timer"></span></p>
-      <div class="tasks" id="monthlies-tasks"></div>
-    </div>
+    <div class="tasks" id="dailies-tasks"></div>
   </div>
 
-  <!-- Dark Mode Toggle -->
-  <button id="darkToggle" class="btn toggle">🌙 Dark Mode</button>
-
-  <!-- Add Modal -->
-  <div id="addModal" class="modal">
-    <div class="modal-content">
-      <h3>Add Task</h3>
-      <textarea id="taskText" placeholder="Enter task..."></textarea>
-      <div class="modal-actions">
-        <button class="btn btn-primary" onclick="saveTask()">Save</button>
-        <button class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
-      </div>
+  <div class="column" id="weeklies-column">
+    <div class="header">
+      <h2>Weeklies</h2>
+      <span class="subtext" id="weeklies-timer"></span>
+      <button class="btn btn-primary" onclick="openAddModal('weeklies')">Add</button>
     </div>
+    <div class="tasks" id="weeklies-tasks"></div>
   </div>
 
-  <script src="script.js"></script>
+  <div class="column" id="monthlies-column">
+    <div class="header">
+      <h2>Monthlies</h2>
+      <span class="subtext" id="monthlies-timer"></span>
+      <button class="btn btn-primary" onclick="openAddModal('monthlies')">Add</button>
+    </div>
+    <div class="tasks" id="monthlies-tasks"></div>
+  </div>
+</div>
+
+<!-- Dark mode toggle -->
+<button class="toggle btn btn-secondary" id="darkToggle">🌙 Light Mode</button>
+
+<!-- Modal for Add/Edit Task -->
+<div id="addModal" class="modal">
+  <div class="modal-content">
+    <h3>Add Task</h3>
+    <textarea id="taskText"></textarea>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveTask()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
