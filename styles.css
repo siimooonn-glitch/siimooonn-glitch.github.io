@@ -40,7 +40,7 @@
   --color-edit-hover: rgb(101, 212, 255);
 
   /* === Font Variables === */
-  --font-family-base: "Segoe UI", Roboto, sans-serif;
+  --font-family-base: "Inter", "Segoe UI", Roboto, sans-serif;
   --font-size-base: 1rem;
   --font-size-small: 0.9rem;
   --font-weight-normal: 400;

@@ -4,17 +4,18 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>TRACKER</title>
+    <title>RS3 DND Tracker</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
   </head>
 
   <body>
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
       <div class="container-fluid">
-        <a class="navbar-brand lf" href="#">Runescape Task Tracker</a>
+        <a class="navbar-brand lf" href="#">RT</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
           data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
           aria-expanded="false" aria-label="Toggle navigation">
@@ -24,10 +25,8 @@
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
             <li class="nav-item">
-              <a class="nav-link active lf" aria-current="page" href="#">Tasks</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link lf" href="#wilderness">Wilderness Events</a>
+              <a class="nav-link lf" href="#wilderness">Wilderness Events <i class="bi bi-fire"></i></a>
+              
             </li>
           </ul>
         </div>
@@ -43,7 +42,7 @@
             <div class="card-body">
 
               <!-- Collapsible section -->
-              <div class="collapse show" id="taskCreator">
+              <div class="collapse" id="taskCreator">
                 <h4 class="card-title mb-3 text-center">Add a New Task</h4>
 
                 <form id="taskForm">

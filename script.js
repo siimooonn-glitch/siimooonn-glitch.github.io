@@ -471,6 +471,27 @@ function updateWildernessTable() {
 document.addEventListener("DOMContentLoaded", () => {
   const utcToggle = document.getElementById("utcToggle");
   const utcLabel = document.getElementById("utcLabel");
+  const taskCreator = document.getElementById("taskCreator");
+  const toggleButton = document.getElementById("toggleButton");
+  const toggleIcon = toggleButton.querySelector("i");
+
+  // Ensure panel starts collapsed
+  const bsCollapse = new bootstrap.Collapse(taskCreator, { toggle: false });
+  bsCollapse.hide();
+  toggleIcon.classList.remove("bi-chevron-up");
+  toggleIcon.classList.add("bi-chevron-down");
+
+  // Listen for collapse events to flip arrow
+  taskCreator.addEventListener("shown.bs.collapse", () => {
+    toggleIcon.classList.remove("bi-chevron-down");
+    toggleIcon.classList.add("bi-chevron-up");
+  });
+
+  taskCreator.addEventListener("hidden.bs.collapse", () => {
+    toggleIcon.classList.remove("bi-chevron-up");
+    toggleIcon.classList.add("bi-chevron-down");
+  });
+  
   if (!utcToggle || !utcLabel) return;
 
   // Restore saved state
