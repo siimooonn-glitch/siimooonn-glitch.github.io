@@ -1,253 +1,618 @@
-let currentColumn = null;
-let editingTask = null;
+// --- Local Storage Helpers ---
+const STORAGE_KEY = "taskTrackerData";
 
-// -------------------- Modal Handling --------------------
-function openAddModal(column, task = null) {
-  currentColumn = column;
-  editingTask = task;
-  const textBox = document.getElementById('taskText');
-  const modalTitle = document.querySelector('.modal-content h3');
-
-  if (task) {
-    textBox.value = task.querySelector('.content p').textContent;
-    modalTitle.textContent = 'Update Task';
-  } else {
-    textBox.value = '';
-    modalTitle.textContent = 'Add Task';
-  }
-
-  document.getElementById('addModal').style.display = 'block';
-  setTimeout(() => textBox.focus(), 50);
-}
-
-function closeAddModal() {
-  document.getElementById('addModal').style.display = 'none';
-  editingTask = null;
-}
-
-function saveTask() {
-  const text = document.getElementById('taskText').value.trim();
-  if (!text) return;
-
-  if (editingTask) {
-    editingTask.querySelector('.content p').textContent = text;
-    saveAllTasks();
-  } else {
-    addTask(currentColumn, text, false);
-  }
-  closeAddModal();
-}
-
-// -------------------- Task Handling --------------------
-function addTask(column, text, completed = false) {
-  const taskContainer = document.getElementById(`${column}-tasks`);
-  const task = document.createElement('div');
-  task.className = 'task';
-  if (completed) task.classList.add('completed');
-
-  task.draggable = true;
-  task.addEventListener('dragstart', dragStart);
-  task.addEventListener('dragover', dragOver);
-  task.addEventListener('drop', dropTask);
-
-  // Task content
-  const contentDiv = document.createElement('div');
-  contentDiv.className = 'content';
-  const content = document.createElement('p');
-  content.textContent = text;
-  contentDiv.appendChild(content);
-
-  // Controls container
-  const controls = document.createElement('div');
-  controls.className = 'controls';
-
-  // Delete button
-  const deleteBtn = document.createElement('button');
-  deleteBtn.className = 'btn-icon delete';
-  deleteBtn.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <polyline points="3 6 5 6 21 6"></polyline>
-      <path d="M19 6l-2 14H7L5 6"></path>
-      <path d="M10 11v6"></path>
-      <path d="M14 11v6"></path>
-    </svg>`;
-  deleteBtn.addEventListener('click', () => {
-    task.remove();
-    saveAllTasks();
-  });
-
-  // Edit button
-  const editBtn = document.createElement('button');
-  editBtn.className = 'btn-icon edit';
-  editBtn.innerHTML = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-      <path d="M12 20h9"></path>
-      <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"></path>
-    </svg>`;
-  editBtn.addEventListener('click', () => openAddModal(column, task));
-
-  // Complete toggle
-  const completeBtn = document.createElement('button');
-  completeBtn.className = 'btn-icon complete';
-  const checkbox = document.createElement('input');
-  checkbox.type = 'checkbox';
-  checkbox.checked = completed;
-  const checkmark = document.createElement('span');
-  checkmark.textContent = '✓';
-  completeBtn.appendChild(checkbox);
-  completeBtn.appendChild(checkmark);
-
-  checkbox.addEventListener('change', () => {
-    task.classList.toggle('completed', checkbox.checked);
-    saveAllTasks();
-  });
-
-  // Append buttons to controls
-  controls.appendChild(deleteBtn);
-  controls.appendChild(editBtn);
-  controls.appendChild(completeBtn);
-
-  // Append everything to task
-  task.appendChild(contentDiv);
-  task.appendChild(controls);
-  taskContainer.appendChild(task);
-
-  saveAllTasks();
-}
-
-// -------------------- Drag and Drop --------------------
-let draggedTask = null;
-function dragStart(e) {
-  draggedTask = this;
-  e.dataTransfer.effectAllowed = 'move';
-  this.classList.add('dragging');
-}
-function dragOver(e) {
-  e.preventDefault();
-  const draggingOver = this;
-  if (draggedTask === draggingOver) return;
-
-  const bounding = draggingOver.getBoundingClientRect();
-  const offset = e.clientY - bounding.top;
-  const height = bounding.height;
-
-  if (offset > height / 2) {
-    draggingOver.insertAdjacentElement('afterend', draggedTask);
-  } else {
-    draggingOver.insertAdjacentElement('beforebegin', draggedTask);
-  }
-}
-function dropTask(e) {
-  e.preventDefault();
-  this.classList.remove('dragging');
-  draggedTask.classList.remove('dragging');
-  draggedTask = null;
-  saveAllTasks();
-}
-
-// -------------------- LocalStorage --------------------
-function saveAllTasks() {
-  const data = {
-    dailies: getColumnData('dailies'),
-    weeklies: getColumnData('weeklies'),
-    monthlies: getColumnData('monthlies')
-  };
-  localStorage.setItem('taskData', JSON.stringify(data));
-}
-
-function getColumnData(column) {
-  const tasks = document.getElementById(`${column}-tasks`).children;
-  const arr = [];
-  for (let task of tasks) {
-    const text = task.querySelector('.content p').textContent;
-    const completed = task.querySelector('input[type="checkbox"]').checked;
-    arr.push({ text, completed });
-  }
-  return arr;
+function saveTasks() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
 }
 
 function loadTasks() {
-  const saved = localStorage.getItem('taskData');
-  if (saved) {
-    const data = JSON.parse(saved);
-    for (let col of ['dailies', 'weeklies', 'monthlies']) {
-      document.getElementById(`${col}-tasks`).innerHTML = '';
-      if (data[col]) {
-        data[col].forEach(t => addTask(col, t.text, t.completed));
-      }
+  const saved = localStorage.getItem(STORAGE_KEY);
+  return saved ? JSON.parse(saved) : [];
+}
+
+// --- Helper to safely find badges by header title ---
+function getResetBadge(title) {
+  const headers = document.querySelectorAll('div.card-header');
+  for (const header of headers) {
+    const strong = header.querySelector('strong');
+    if (strong && strong.textContent.trim() === title) {
+      return header.querySelector('.badge');
     }
   }
+  return null;
 }
 
-// -------------------- Timers --------------------
-function updateTimers() {
-  document.getElementById('dailies-timer').textContent = getTimeUntilNextUTC('daily');
-  document.getElementById('weeklies-timer').textContent = getTimeUntilNextUTC('weekly');
-  document.getElementById('monthlies-timer').textContent = getTimeUntilNextUTC('monthly');
+// --- Global State ---
+let tasks = loadTasks();
+
+// --- Sorting Helper ---
+function sortTasksList(list) {
+  return list.sort((a, b) => {
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    if (b.priority !== a.priority) return b.priority - a.priority;
+    return (a.createdAt || 0) - (b.createdAt || 0);
+  });
 }
 
-function getTimeUntilNextUTC(type) {
-  const now = new Date();
-  let next;
+function formatCompletionDate(isoString) {
+  if (!isoString) return '';
+  const date = new Date(isoString);
+  const options = {
+    weekday: 'short',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  };
+  return date.toLocaleString(undefined, options);
+}
 
-  if (type === 'daily') {
-    next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
-  } else if (type === 'weekly') {
-    const day = now.getUTCDay();
-    let daysUntilWed = (3 - day + 7) % 7 || 7;
-    next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysUntilWed));
+// --- Task Rendering ---
+function createTaskCard(task) {
+  const card = document.createElement('div');
+  card.className = `card mb-3 task-card${task.completed ? " completed" : ""}`;
+  card.dataset.id = task.id;
+
+  const body = document.createElement('div');
+  body.className = 'card-body';
+  const p = document.createElement('p');
+  p.className = 'card-text';
+  p.textContent = task.text;
+  body.appendChild(p);
+
+  card.appendChild(body);
+
+  // Edit + Delete icons
+  const editIcon = document.createElement('i');
+  editIcon.className = 'bi bi-pencil-square edit-task-button';
+  const delIcon = document.createElement('i');
+  delIcon.className = 'bi bi-x-square delete-task-button';
+
+  // --- Overlay interaction with edit/delete icons ---
+  editIcon.addEventListener('mouseenter', () => {
+    const overlay = card.querySelector('.overlay-text');
+    if (overlay) overlay.textContent = 'Edit task';
+  });
+  editIcon.addEventListener('mouseleave', () => {
+    const overlay = card.querySelector('.overlay-text');
+    if (overlay) {
+      overlay.textContent = task.completed
+        ? `Completed on ${formatCompletionDate(task.completedAt)}`
+        : 'Mark as complete';
+    }
+  });
+
+  delIcon.addEventListener('mouseenter', () => {
+    const overlay = card.querySelector('.overlay-text');
+    if (overlay) overlay.textContent = 'Delete task';
+  });
+  delIcon.addEventListener('mouseleave', () => {
+    const overlay = card.querySelector('.overlay-text');
+    if (overlay) {
+      overlay.textContent = task.completed
+        ? `Completed on ${formatCompletionDate(task.completedAt)}`
+        : 'Mark as complete';
+    }
+  });
+
+  card.appendChild(editIcon);
+  card.appendChild(delIcon);
+
+  // --- Event handlers ---
+  card.addEventListener('click', (e) => {
+    if (e.target.closest('.edit-task-button') || e.target.closest('.delete-task-button')) return;
+    task.completed = !task.completed;
+
+    // If marking completed, store timestamp
+    if (task.completed) {
+      const now = new Date();
+      task.completedAt = now.toISOString();
+    } else {
+      delete task.completedAt; // remove timestamp if unmarking
+    }
+
+    saveTasks();
+    renderTasks();
+  });
+
+  editIcon.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openEditModal(task);
+  });
+
+  delIcon.addEventListener('click', (e) => {
+    e.stopPropagation();
+    tasks = tasks.filter(t => t.id !== task.id);
+    saveTasks();
+    renderTasks();
+  });
+
+  // --- Hover overlay setup ---
+  const overlay = document.createElement("div");
+  overlay.classList.add("overlay-text");
+
+  if (task.completed && task.completedAt) {
+    const completedDate = new Date(task.completedAt);
+    const options = {
+      weekday: 'short',
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    };
+    let formatted = completedDate.toLocaleString(undefined, options);
+
+    // Add ordinal suffix (1st, 2nd, 3rd, etc.)
+    const day = completedDate.getDate();
+    const suffix =
+      (day % 10 === 1 && day !== 11) ? 'st' :
+      (day % 10 === 2 && day !== 12) ? 'nd' :
+      (day % 10 === 3 && day !== 13) ? 'rd' : 'th';
+    formatted = formatted.replace(day.toString(), `${day}${suffix}`);
+
+    overlay.textContent = `Completed on ${formatted}`;
   } else {
-    next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+    overlay.textContent = "Mark as complete";
   }
-  next.setUTCHours(0, 0, 0, 0);
 
-  const diff = next - now;
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+  card.appendChild(overlay);
 
-  return `${hours}h ${minutes}m ${seconds}s`;
+  return card;
 }
 
-setInterval(updateTimers, 1000);
-updateTimers();
 
-// -------------------- Automatic Resets --------------------
-function resetTasks() {
-  const now = new Date();
-  const utcHour = now.getUTCHours();
-  const utcMinute = now.getUTCMinutes();
-  const utcSecond = now.getUTCSeconds();
-  const utcDay = now.getUTCDay();
-  const utcDate = now.getUTCDate();
+function renderTasks() {
+  const dailyBody = document.querySelector('#dailyColumn .card-body');
+  const weeklyBody = document.querySelector('#weeklyColumn .card-body');
+  const monthlyBody = document.querySelector('#monthlyColumn .card-body');
 
-  if (utcHour === 0 && utcMinute === 0 && utcSecond === 0) resetColumn('dailies');
-  if (utcDay === 3 && utcHour === 0 && utcMinute === 0 && utcSecond === 0) resetColumn('weeklies');
-  if (utcDate === 1 && utcHour === 0 && utcMinute === 0 && utcSecond === 0) resetColumn('monthlies');
+  dailyBody.innerHTML = '';
+  weeklyBody.innerHTML = '';
+  monthlyBody.innerHTML = '';
+
+  const dailyTasks = sortTasksList(tasks.filter(t => t.category === 'daily'));
+  const weeklyTasks = sortTasksList(tasks.filter(t => t.category === 'weekly'));
+  const monthlyTasks = sortTasksList(tasks.filter(t => t.category === 'monthly'));
+
+  dailyTasks.forEach(t => dailyBody.appendChild(createTaskCard(t)));
+  weeklyTasks.forEach(t => weeklyBody.appendChild(createTaskCard(t)));
+  monthlyTasks.forEach(t => monthlyBody.appendChild(createTaskCard(t)));
 }
 
-function resetColumn(column) {
-  const tasks = document.getElementById(`${column}-tasks`).children;
-  for (let task of tasks) {
-    const checkbox = task.querySelector('input[type="checkbox"]');
-    checkbox.checked = false;
-    task.classList.remove('completed');
+// --- Add Task ---
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('taskForm');
+  const addBtn = form?.querySelector('#addTaskButton');
+  const textInput = form?.querySelector('#taskText');
+  const priorityRange = form?.querySelector('#priorityRange');
+  const priorityValue = form?.querySelector('#priorityValue');
+
+  if (form && addBtn) {
+    addBtn.addEventListener('click', () => {
+      const text = textInput.value.trim();
+      if (!text) return;
+
+      const category = form.querySelector('input[name="taskCategory"]:checked')?.value || 'daily';
+      const priority = Number(priorityRange.value) || 1;
+
+      const newTask = {
+        id: 't_' + Math.random().toString(36).slice(2, 9),
+        text,
+        category,
+        priority,
+        completed: false,
+        createdAt: Date.now(),
+      };
+
+      tasks.push(newTask);
+      saveTasks();
+      renderTasks();
+
+      // Reset input field
+      textInput.value = '';
+      priorityRange.value = 5;
+      if (priorityValue) priorityValue.textContent = '5';
+    });
+
+    // Slider live update
+    priorityRange.addEventListener('input', e => {
+      priorityValue.textContent = e.target.value;
+    });
   }
-  saveAllTasks();
+
+  // --- Wilderness toggle (smooth animation logic) ---
+  const wildernessLinks = document.querySelectorAll('a.nav-link');
+  let wildernessLink = null;
+
+  wildernessLinks.forEach(link => {
+    if (link.getAttribute('href') === '#wilderness' || link.textContent.trim() === 'Wilderness Events') {
+      wildernessLink = link;
+    }
+  });
+
+  const wildernessColumn = document.getElementById('wildernessColumn');
+
+  if (wildernessLink && wildernessColumn) {
+    const collapseInstance = new bootstrap.Collapse(wildernessColumn, { toggle: false });
+    let isOpen = false;
+    const taskCols = document.querySelectorAll('#dailyColumn, #weeklyColumn, #monthlyColumn');
+
+    wildernessLink.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      if (!isOpen) {
+        // Shrink task columns BEFORE wilderness animates in
+        taskCols.forEach(col => {
+          col.classList.remove('col-md-4');
+          col.classList.add('col-md-3');
+        });
+
+        collapseInstance.show();
+        isOpen = true;
+      } else {
+        // Hide wilderness column FIRST
+        collapseInstance.hide();
+
+        // After animation finishes, expand columns back
+        wildernessColumn.addEventListener('hidden.bs.collapse', function handler() {
+          taskCols.forEach(col => {
+            col.classList.remove('col-md-3');
+            col.classList.add('col-md-4');
+          });
+          wildernessColumn.removeEventListener('hidden.bs.collapse', handler);
+        });
+
+        isOpen = false;
+      }
+    });
+  }
+
+  renderTasks();
+  startCountdowns();
+});
+
+// --- Edit Modal Logic ---
+let currentEditTaskId = null;
+
+function openEditModal(task) {
+  currentEditTaskId = task.id;
+  document.getElementById('editTaskText').value = task.text;
+  document.getElementById('editTaskPriority').value = task.priority;
+  document.getElementById('editPriorityValue').textContent = task.priority;
+
+  document.querySelectorAll('input[name="editTaskCategory"]').forEach(r => {
+    r.checked = r.value === task.category;
+  });
+
+  const modal = new bootstrap.Modal(document.getElementById('editTaskModal'));
+  modal.show();
 }
 
-setInterval(resetTasks, 1000);
+document.getElementById('saveEditTask').addEventListener('click', () => {
+  if (!currentEditTaskId) return;
 
-// -------------------- Dark Mode Toggle --------------------
-document.getElementById('darkToggle').addEventListener('click', () => {
-  document.body.classList.toggle('dark');
-  const btn = document.getElementById('darkToggle');
-  if (document.body.classList.contains('dark')) {
-    btn.textContent = '☀️ Light Mode';
-  } else {
-    btn.textContent = '🌙 Dark Mode';
+  const task = tasks.find(t => t.id === currentEditTaskId);
+  if (!task) return;
+
+  task.text = document.getElementById('editTaskText').value.trim();
+  task.priority = Number(document.getElementById('editTaskPriority').value);
+  const cat = document.querySelector('input[name="editTaskCategory"]:checked');
+  if (cat) task.category = cat.value;
+
+  saveTasks();
+  renderTasks();
+
+  const modalEl = document.getElementById('editTaskModal');
+  const modalInstance = bootstrap.Modal.getInstance(modalEl);
+  modalInstance.hide();
+});
+
+// === Keyboard shortcuts for the Edit Task modal ===
+
+// Press Enter → Save
+const editForm = document.getElementById('editTaskForm');
+if (editForm) {
+  editForm.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      document.getElementById('saveEditTask').click();
+    }
+  });
+}
+
+// Press Escape → Cancel / Close modal
+document.addEventListener('keydown', (e) => {
+  const modalEl = document.getElementById('editTaskModal');
+  const isModalVisible = modalEl && modalEl.classList.contains('show');
+
+  if (isModalVisible && e.key === 'Escape') {
+    e.preventDefault();
+    const modalInstance = bootstrap.Modal.getInstance(modalEl);
+    if (modalInstance) modalInstance.hide();
   }
 });
 
-// -------------------- Initialize --------------------
-loadTasks();
+document.getElementById('editTaskPriority').addEventListener('input', (e) => {
+  document.getElementById('editPriorityValue').textContent = e.target.value;
+});
+
+// --- Wilderness Events ---
+const WILDERNESS_EVENTS = [
+  "Spider Swarm",
+  "Unnatural Outcrop",
+  "Stryke the Wyrm",
+  "Demon Stragglers",
+  "Butterfly Swarm",
+  "King Black Dragon Rampage",
+  "Forgotten Soldiers",
+  "Surprising Seedlings",
+  "Hellhound Pack",
+  "Infernal Star",
+  "Lost Souls",
+  "Ramokee Incursion",
+  "Displaced Energy",
+  "Evil Bloodwood Tree"
+];
+
+const SPECIAL_EVENTS = [
+  "Stryke the Wyrm",
+  "King Black Dragon Rampage",
+  "Infernal Star",
+  "Evil Bloodwood Tree"
+];
+
+// --- Reference-based event index calculation ---
+// Known reference: on 2025-10-10 22:00 UTC the event was "Evil Bloodwood Tree"
+// (Evil Bloodwood Tree is the last item in your WILDERNESS_EVENTS array)
+const WILDERNESS_REF_DATE_MS = Date.UTC(2025, 9, 10, 22, 0, 0); // months are 0-based -> 9 = October
+const WILDERNESS_REF_INDEX = 13; // index (0-based) of "Evil Bloodwood Tree" in WILDERNESS_EVENTS
+const EVENTS_COUNT = WILDERNESS_EVENTS.length; // should be 14
+
+function getCurrentEventIndex() {
+  // hours (whole) difference since reference moment
+  const hoursSinceRef = Math.floor((Date.now() - WILDERNESS_REF_DATE_MS) / 3600000);
+  // advance the known reference index by hoursSinceRef, wrap into [0..EVENTS_COUNT-1]
+  const idx = ((WILDERNESS_REF_INDEX + hoursSinceRef) % EVENTS_COUNT + EVENTS_COUNT) % EVENTS_COUNT;
+  return idx;
+}
+
+function buildWildernessTable() {
+  const table = document.getElementById("wildernessTable");
+  if (!table) return;
+
+  table.innerHTML = `
+    <thead>
+      <tr>
+        <th>Event</th>
+        <th>Start</th>
+        <th>Countdown</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  `;
+
+  updateWildernessTable();
+  setInterval(updateWildernessTable, 1000);
+}
+
+function updateWildernessTable() {
+  const tableBody = document.querySelector("#wildernessTable tbody");
+  if (!tableBody) return;
+
+  const utcToggle = document.getElementById("utcToggle");
+  const showUTC = utcToggle ? utcToggle.checked : true;
+
+  const now = new Date();
+  const currentHourUTC = now.getUTCHours();
+  const currentMinute = now.getUTCMinutes();
+  const currentSecond = now.getUTCSeconds();
+
+  const currentEventIndex = getCurrentEventIndex();
+  const nextEventIndex = (currentEventIndex + 1) % EVENTS_COUNT;
+  const nextEventHour = (currentHourUTC + 1) % 24;
+
+  const events = [];
+  for (let i = 0; i < EVENTS_COUNT; i++) {
+    const index = (nextEventIndex + i - 7 + EVENTS_COUNT) % EVENTS_COUNT; // center next event
+    const startHour = (nextEventHour + i - 7 + 24) % 24;
+    events.push({ name: WILDERNESS_EVENTS[index], hour: startHour });
+  }
+
+  tableBody.innerHTML = "";
+
+  events.forEach((event, i) => {
+    const startTime = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), event.hour, 0, 0));
+    if (startTime < now) startTime.setUTCHours(startTime.getUTCHours() + 24);
+
+    const diff = startTime - now;
+    const hours = Math.floor(diff / 3600000);
+    const minutes = Math.floor((diff % 3600000) / 60000);
+    const seconds = Math.floor((diff % 60000) / 1000);
+
+    const countdown =
+      diff >= 3600000
+        ? `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}`
+        : `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+
+    const isNextEvent = i === Math.floor(events.length / 2);
+
+    // Format start time
+    let displayTime;
+    if (showUTC) {
+      displayTime = `${event.hour.toString().padStart(2, "0")}:00`;
+    } else {
+      // Convert UTC hour to local time
+      const localDate = new Date(startTime);
+      const localHours = localDate.getHours().toString().padStart(2, "0");
+      const localMinutes = localDate.getMinutes().toString().padStart(2, "0");
+      displayTime = `${localHours}:${localMinutes}`;
+    }
+
+    const tr = document.createElement("tr");
+    if (isNextEvent) tr.classList.add("table-success");
+
+    const nameCell = document.createElement("td");
+    nameCell.innerHTML = SPECIAL_EVENTS.includes(event.name)
+      ? `<strong>${event.name}</strong>`
+      : event.name;
+
+    tr.innerHTML = `
+      <td align="left">${nameCell.innerHTML}</td>
+      <td>${displayTime}</td>
+      <td align="right">${countdown}</td>
+    `;
+
+    tableBody.appendChild(tr);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const utcToggle = document.getElementById("utcToggle");
+  const utcLabel = document.getElementById("utcLabel");
+  if (!utcToggle || !utcLabel) return;
+
+  // Restore saved state
+  const saved = localStorage.getItem("showUTC");
+  if (saved !== null) utcToggle.checked = saved === "true";
+
+  // Update label text
+  utcLabel.textContent = utcToggle.checked ? "Server Time" : "Local Time";
+
+  utcToggle.addEventListener("change", () => {
+    const showUTC = utcToggle.checked;
+    localStorage.setItem("showUTC", showUTC);
+    utcLabel.textContent = showUTC ? "Server Time" : "Local Time";
+    updateWildernessTable(); // instantly refresh display
+  });
+});
+
+document.addEventListener("DOMContentLoaded", buildWildernessTable);
+
+// --- Countdown Timers ---
+function getNextResetUTC(type) {
+  const now = new Date();
+
+  if (type === 'daily') {
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
+  }
+  if (type === 'weekly') {
+    const day = now.getUTCDay(); // Sunday = 0
+    const daysUntilWed = (3 - day + 7) % 7 || 7; // next Wednesday
+    return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysUntilWed, 0, 0, 0));
+  }
+  if (type === 'monthly') {
+    const nextMonth = now.getUTCMonth() + 1;
+    return new Date(Date.UTC(now.getUTCFullYear(), nextMonth, 1, 0, 0, 0));
+  }
+}
+
+function formatResetCountdown(diffMs) {
+  const totalSeconds = Math.floor(diffMs / 1000);
+  const totalMinutes = Math.floor(totalSeconds / 60);
+  const totalHours = Math.floor(totalMinutes / 60);
+  const days = Math.floor(totalHours / 24);
+  const hours = totalHours % 24;
+  const minutes = totalMinutes % 60;
+  const seconds = totalSeconds % 60;
+
+  if (days >= 1) {
+    return `${days}d ${hours.toString().padStart(2, "0")}h ${minutes
+      .toString()
+      .padStart(2, "0")}m`;
+  } else {
+    return `${hours.toString().padStart(2, "0")}h ${minutes
+      .toString()
+      .padStart(2, "0")}m ${seconds.toString().padStart(2, "0")}s`;
+  }
+}
+
+
+function updateCountdown(type, badgeId) {
+  const badge = document.getElementById(badgeId);
+  const now = new Date();
+  let nextReset = getNextResetUTC(type);
+  let diff = nextReset - now;
+
+  if (diff <= 0) {
+    // Smooth rollover
+    tasks.forEach(t => {
+      if (t.category === type) t.completed = false;
+    });
+    saveTasks();
+    renderTasks();
+    nextReset = getNextResetUTC(type);
+    diff = nextReset - now;
+  }
+
+  const hours = Math.floor(diff / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  const seconds = Math.floor((diff % 60000) / 1000);
+
+  if (badge)
+    badge.textContent = `Resets in ${formatResetCountdown(diff)}`;
+}
+
+function startCountdowns() {
+  setInterval(() => {
+    updateCountdown('daily', 'dailyResetBadge');
+    updateCountdown('weekly', 'weeklyResetBadge');
+    updateCountdown('monthly', 'monthlyResetBadge');
+  }, 1000);
+}
+
+function getNextReset(category) {
+  const now = new Date();
+
+  if (category === "daily") {
+    const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
+    return next;
+  }
+
+  if (category === "weekly") {
+    const day = now.getUTCDay(); // Sunday=0 ... Saturday=6
+    const daysUntilWed = (3 - day + 7) % 7 || 7; // next Wednesday (3)
+    const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysUntilWed, 0, 0, 0));
+    return next;
+  }
+
+  if (category === "monthly") {
+    const nextMonth = now.getUTCMonth() + 1;
+    const nextYear = nextMonth > 11 ? now.getUTCFullYear() + 1 : now.getUTCFullYear();
+    const month = nextMonth % 12;
+    return new Date(Date.UTC(nextYear, month, 1, 0, 0, 0));
+  }
+}
+
+function startResetWatcher() {
+  setInterval(() => {
+    const now = new Date();
+
+    ["daily", "weekly", "monthly"].forEach((category) => {
+      const nextReset = getNextReset(category);
+      const timeDiff = nextReset - now;
+
+      if (timeDiff <= 0) {
+        // Reset all completed tasks for this category
+        const tasks = loadTasks();
+        let changed = false;
+        tasks.forEach(task => {
+          if (task.category === category && task.completed) {
+            task.completed = false;
+            changed = true;
+          }
+        });
+
+        if (changed) {
+          saveTasks(tasks);
+          renderTasks();
+        }
+      }
+    });
+  }, 1000);
+}
+
+// call this once on load
+document.addEventListener("DOMContentLoaded", startResetWatcher);
+

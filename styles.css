@@ -1,0 +1,250 @@
+:root {
+  /* === Base Color Palette === */
+  --color-bg: #000000;
+  --color-bg-gradient-top: #040322;
+  --color-bg-gradient-mid: #000000;
+  --color-bg-gradient-bottom: #000000;
+
+  --color-primary: rgb(40, 41, 41);
+  --color-secondary: rgb(65, 64, 64);
+  --color-accent: #00ccff;
+
+  --color-text-main: #ffffff;
+  --color-text-muted: gray;
+  --color-text-light: #00aeff;
+  --color-text-delete: #8948d3;
+  --color-text-delete-hover: rgb(175, 49, 112);
+
+  /* === Card Variables === */
+  --color-card-bg: var(--color-primary);
+  --color-card-border: rgba(255, 255, 255, 0.08);
+  --color-card-hover-border: var(--color-accent);
+
+  /* === Task Card Variables === */
+  --color-taskcard-bg: var(--color-primary);
+  --color-taskcard-border: rgba(255, 255, 255, 0.1);
+  --color-taskcard-border-completed: rgba(0, 255, 100, 0.2);
+  --color-taskcard-overlay: rgba(0, 0, 0, 0.5);
+  --color-taskcard-text: var(--color-text-main);
+  --color-taskcard-completed-bg: rgba(50, 161, 67, 0.349);
+
+  /* === Table Variables === */
+  --color-table-highlight-bg: #181818;
+  --color-table-highlight-text: rgb(74, 228, 255);
+
+  /* === Modal Variables === */
+  --color-modal-bg: var(--color-bg);
+  --color-modal-header: var(--color-text-muted);
+
+  /* === Button / State Colors === */
+  --color-edit-hover: rgb(101, 212, 255);
+
+  /* === Font Variables === */
+  --font-family-base: "Segoe UI", Roboto, sans-serif;
+  --font-size-base: 1rem;
+  --font-size-small: 0.9rem;
+  --font-weight-normal: 400;
+  --font-weight-bold: 600;
+}
+
+html {
+  height: 100%;
+}
+
+/* === General Layout === */
+body {
+  height: 100%;
+  background: var(--color-bg);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-gradient-top) 0%,
+    var(--color-bg-gradient-mid) 78%,
+    var(--color-bg-gradient-bottom) 100%
+  );
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  color: var(--color-text-main);
+}
+
+.navbar {
+  background-color: var(--color-primary) !important;
+}
+
+.navbar-brand,
+.nav-link {
+  color: var(--color-text-main) !important;
+}
+
+.container-xxl {
+  margin-top: 20px;
+}
+
+@media (min-width: 1400px) {
+  .container-xxl {
+    max-width: 1700px;
+  }
+}
+
+/* === Cards & Backgrounds === */
+.card {
+  background-color: var(--color-card-bg);
+  color: var(--color-text-main);
+  border: 1px solid var(--color-card-border);
+  transition: border-color 0.3s ease;
+}
+
+.card:hover {
+  border-color: var(--color-card-hover-border);
+}
+
+.bg-primary {
+  background-color: var(--color-secondary) !important;
+}
+
+.bg-light {
+  background-color: var(--color-primary) !important;
+  color: var(--color-text-main) !important;
+}
+
+.bg-danger {
+  background-color: var(--color-secondary) !important;
+}
+
+.border-danger {
+  border-color: var(--color-secondary) !important;
+}
+
+/* === Tables === */
+.table > :not(caption) > * > * {
+  background-color: var(--color-primary) !important;
+  color: var(--color-text-main);
+}
+
+/* Highlight for next wilderness event */
+#wildernessTable tr.table-success td {
+  background-color: var(--color-table-highlight-bg) !important;
+  color: var(--color-table-highlight-text) !important;
+  /*font-weight: var(--font-weight-bold);*/
+}
+
+/* === Modal Styling === */
+.modal-content {
+  background-color: var(--color-modal-bg);
+  border: 1px solid var(--color-accent);
+}
+
+.modal-header {
+  color: var(--color-modal-header);
+}
+
+.modal * {
+  color: var(--color-text-main) !important;
+}
+
+/* === Task Cards === */
+.task-card {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: opacity 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+  background-color: var(--color-taskcard-bg);
+  border: 1px solid var(--color-taskcard-border);
+  color: var(--color-taskcard-text);
+  border-radius: 0.5rem;
+  font-family: var(--font-family-base);
+}
+
+/* Completed task color */
+.task-card.completed {
+  background-color: var(--color-taskcard-completed-bg);
+  border-color: var(--color-taskcard-border-completed);
+}
+
+/* === Hover Overlay === */
+.task-card .overlay-text {
+  position: absolute;
+  inset: 0;
+  background-color: var(--color-taskcard-overlay);
+  color: var(--color-taskcard-text);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--font-size-small);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  opacity: 0;
+  transform: scale(1.05);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.task-card:hover {
+  opacity: 1;
+  border-color: var(--color-card-hover-border);
+}
+
+.task-card:hover .card-text {
+  opacity: 0.1;
+}
+
+.task-card:hover .overlay-text {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* === Edit & Delete Icons === */
+.edit-task-button,
+.delete-task-button {
+  position: absolute;
+  z-index: 10;
+  pointer-events: auto;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: color 0.2s, transform 0.2s;
+}
+
+/* Edit icon — top right */
+.edit-task-button {
+  top: 0px;
+  right: 4px;
+  color: var(--color-text-light);
+}
+.edit-task-button:hover {
+  color: var(--color-edit-hover);
+  transform: scale(1.1);
+}
+
+/* Delete icon — bottom right */
+.delete-task-button {
+  bottom: 0px;
+  right: 4px;
+  color: var(--color-text-delete);
+}
+.delete-task-button:hover {
+  color: var(--color-text-delete-hover);
+  transform: scale(1.1);
+}
+
+/* === Hide edit/delete icons until hover === */
+.task-card .edit-task-button,
+.task-card .delete-task-button {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+/* When hovering the card, show the icons */
+.task-card:hover .edit-task-button,
+.task-card:hover .delete-task-button {
+  opacity: 1;
+  transform: scale(1);
+  transition-delay: 0.1s;
+}
+
+/* Fix for modal text input color */
+#editTaskForm input {
+  color: black !important;
+}

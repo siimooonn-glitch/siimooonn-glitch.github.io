@@ -1,57 +1,208 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Task Manager</title>
-  <link rel="stylesheet" href="style.css">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-</head>
-<body class="dark">
 
-<div class="container">
-  <div class="column" id="dailies-column">
-    <div class="header">
-      <h2>Dailies</h2>
-      <span class="subtext" id="dailies-timer"></span>
-      <button class="btn btn-primary" onclick="openAddModal('dailies')">Add</button>
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TRACKER</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css">
+  </head>
+
+  <body>
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+      <div class="container-fluid">
+        <a class="navbar-brand lf" href="#">Runescape Task Tracker</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+          data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+          aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+              <a class="nav-link active lf" aria-current="page" href="#">Tasks</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link lf" href="#wilderness">Wilderness Events</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container-xxl">
+
+      <!-- Top header panel -->
+      <div class="row mb-4">
+        <div class="col">
+          <div class="card">
+            <div class="card-body">
+
+              <!-- Collapsible section -->
+              <div class="collapse show" id="taskCreator">
+                <h4 class="card-title mb-3 text-center">Add a New Task</h4>
+
+                <form id="taskForm">
+                  <!-- Task text input -->
+                  <div class="mb-3">
+                    <label for="taskText" class="form-label fw-semibold">Task Description</label>
+                    <input type="text" class="form-control" id="taskText" placeholder="Enter your task here..." required>
+                  </div>
+
+                  <!-- Radio buttons -->
+                  <div class="mb-3">
+                    <label class="form-label fw-semibold d-block">Category</label>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="taskCategory" id="dailyRadio" value="daily" checked>
+                      <label class="form-check-label" for="dailyRadio">Daily</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="taskCategory" id="weeklyRadio" value="weekly">
+                      <label class="form-check-label" for="weeklyRadio">Weekly</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                      <input class="form-check-input" type="radio" name="taskCategory" id="monthlyRadio" value="monthly">
+                      <label class="form-check-label" for="monthlyRadio">Monthly</label>
+                    </div>
+                  </div>
+
+                  <!-- Priority slider -->
+                  <div class="mb-3">
+                    <label for="priorityRange" class="form-label fw-semibold">Priority Level:
+                      <span id="priorityValue" class="text-primary">5</span>
+                    </label>
+                    <input type="range" class="form-range" min="1" max="10" value="5" id="priorityRange">
+                  </div>
+
+                  <!-- Add button -->
+                  <div class="text-center">
+                    <button type="button" id="addTaskButton" class="btn btn-success px-4">
+                      <i class="bi bi-plus-circle me-1"></i> Add Task
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              <!-- Collapse toggle arrow -->
+              <div class="text-center mt-2">
+                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse"
+                  data-bs-target="#taskCreator" aria-expanded="true" aria-controls="taskCreator" id="toggleButton">
+                  <i class="bi bi-chevron-down"></i>
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Task Columns -->
+      <div class="row g-3">
+
+        <!-- Daily -->
+        <div class="col-md-4" id="dailyColumn">
+          <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+              <strong>Daily</strong>
+              <span id="dailyResetBadge" class="badge bg-light text-primary">Resets in 12:34:56</span>
+            </div>
+            <div class="card-body"></div>
+          </div>
+        </div>
+
+        <!-- Weekly -->
+        <div class="col-md-4" id="weeklyColumn">
+          <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+              <strong>Weekly</strong>
+              <span id="weeklyResetBadge" class="badge bg-light text-primary">Resets in 12:34:56</span>
+            </div>
+            <div class="card-body"></div>
+          </div>
+        </div>
+
+        <!-- Monthly -->
+        <div class="col-md-4" id="monthlyColumn">
+          <div class="card">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+              <strong>Monthly</strong>
+              <span id="monthlyResetBadge" class="badge bg-light text-primary">Resets in 12:34:56</span>
+            </div>
+            <div class="card-body"></div>
+          </div>
+        </div>
+
+        <!-- Wilderness -->
+        <div class="col-md-3 collapse" id="wildernessColumn">
+          <div class="card border-danger">
+            <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center form-switch">
+              <strong>Wilderness Events</strong>
+              <label class="form-check-label" for="utcToggle" id="utcLabel">Server Time</label>
+              <input class="form-check-input" type="checkbox" role="switch" id="utcToggle" checked>
+              <i class="bi bi-fire"></i>
+            </div>
+            <div class="card-body">
+              <!-- Your table remains exactly as before -->
+               <table id="wildernessTable" class="table table-sm align-middle text-center"></table>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
-    <div class="tasks" id="dailies-tasks"></div>
-  </div>
 
-  <div class="column" id="weeklies-column">
-    <div class="header">
-      <h2>Weeklies</h2>
-      <span class="subtext" id="weeklies-timer"></span>
-      <button class="btn btn-primary" onclick="openAddModal('weeklies')">Add</button>
+    <!-- Edit Task Modal -->
+    <div class="modal fade" id="editTaskModal" tabindex="-1" aria-labelledby="editTaskModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="editTaskModalLabel">Edit Task</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+          <div class="modal-body">
+            <form id="editTaskForm">
+              <input type="hidden" id="editTaskId">
+              <div class="mb-3">
+                <label for="editTaskText" class="form-label fw-semibold">Task Description</label>
+                <input type="text" class="form-control" id="editTaskText" required>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold d-block">Category</label>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="editTaskCategory" id="editDaily" value="daily">
+                  <label class="form-check-label" for="editDaily">Daily</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="editTaskCategory" id="editWeekly" value="weekly">
+                  <label class="form-check-label" for="editWeekly">Weekly</label>
+                </div>
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" type="radio" name="editTaskCategory" id="editMonthly" value="monthly">
+                  <label class="form-check-label" for="editMonthly">Monthly</label>
+                </div>
+              </div>
+              <div class="mb-3">
+                <label for="editTaskPriority" class="form-label fw-semibold">Priority Level:
+                  <span id="editPriorityValue" class="text-primary">5</span>
+                </label>
+                <input type="range" class="form-range" min="1" max="10" value="5" id="editTaskPriority">
+              </div>
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary" id="saveEditTask">Save Changes</button>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="tasks" id="weeklies-tasks"></div>
-  </div>
 
-  <div class="column" id="monthlies-column">
-    <div class="header">
-      <h2>Monthlies</h2>
-      <span class="subtext" id="monthlies-timer"></span>
-      <button class="btn btn-primary" onclick="openAddModal('monthlies')">Add</button>
-    </div>
-    <div class="tasks" id="monthlies-tasks"></div>
-  </div>
-</div>
 
-<!-- Dark mode toggle -->
-<button class="toggle btn btn-secondary" id="darkToggle">🌙 Light Mode</button>
-
-<!-- Modal for Add/Edit Task -->
-<div id="addModal" class="modal">
-  <div class="modal-content">
-    <h3>Add Task</h3>
-    <textarea id="taskText"></textarea>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeAddModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveTask()">Save</button>
-    </div>
-  </div>
-</div>
-
-<script src="script.js"></script>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="script.js"></script>
+  </body>
 </html>
