@@ -1,6 +1,6 @@
 :root {
   /* === Base Color Palette === */
-  --color-bg: #000000;
+  --color-bg: #252525;
   --color-bg-gradient-top: #040322;
   --color-bg-gradient-mid: #000000;
   --color-bg-gradient-bottom: #000000;
@@ -87,6 +87,34 @@ body {
   }
 }
 
+/* === Chevron Toggle Button Styling === */
+#toggleButton {
+  color: var(--color-accent); /* use your accent cyan */
+  border-color: var(--color-accent);
+  background-color: transparent;
+  transition: all 0.25s ease;
+  font-weight: 600;
+}
+
+#toggleButton:hover {
+  background-color: rgba(39, 212, 255, 0.1);
+  color: #5ee9ff; /* brighter cyan on hover */
+  border-color: #5ee9ff;
+}
+
+#toggleButton i {
+  font-size: 1.4rem; /* make the icon a bit larger */
+  font-weight: bold;
+  vertical-align: middle;
+  transition: transform 0.25s ease, color 0.25s ease;
+}
+
+/* Optional: a little hover spin for flair */
+#toggleButton:hover i {
+  transform: scale(1.1);
+}
+
+
 /* === Cards & Backgrounds === */
 .card {
   background-color: var(--color-card-bg);
@@ -127,6 +155,12 @@ body {
   background-color: var(--color-table-highlight-bg) !important;
   color: var(--color-table-highlight-text) !important;
   /*font-weight: var(--font-weight-bold);*/
+}
+
+/* Wilderness column hover border effect */
+#wildernessColumn .card.border-danger:hover {
+  border-color: var(--color-card-hover-border) !important;
+  transition: border-color 0.25s ease;
 }
 
 /* === Modal Styling === */
