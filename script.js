@@ -515,17 +515,19 @@ document.addEventListener("DOMContentLoaded", buildWildernessTable);
 function getNextResetUTC(type) {
   const now = new Date();
 
-  if (type === 'daily') {
+  if (type === "daily") {
     return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
   }
-  if (type === 'weekly') {
+  if (type === "weekly") {
     const day = now.getUTCDay(); // Sunday = 0
     const daysUntilWed = (3 - day + 7) % 7 || 7; // next Wednesday
     return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysUntilWed, 0, 0, 0));
   }
-  if (type === 'monthly') {
+  if (type === "monthly") {
     const nextMonth = now.getUTCMonth() + 1;
-    return new Date(Date.UTC(now.getUTCFullYear(), nextMonth, 1, 0, 0, 0));
+    const nextYear = nextMonth > 11 ? now.getUTCFullYear() + 1 : now.getUTCFullYear();
+    const month = nextMonth % 12;
+    return new Date(Date.UTC(nextYear, month, 1, 0, 0, 0));
   }
 }
 
@@ -539,101 +541,77 @@ function formatResetCountdown(diffMs) {
   const seconds = totalSeconds % 60;
 
   if (days >= 1) {
-    return `${days}d ${hours.toString().padStart(2, "0")}h ${minutes
-      .toString()
-      .padStart(2, "0")}m`;
+    return `${days}d ${hours.toString().padStart(2, "0")}h ${minutes.toString().padStart(2, "0")}m`;
   } else {
-    return `${hours.toString().padStart(2, "0")}h ${minutes
+    return `${hours.toString().padStart(2, "0")}h ${minutes.toString().padStart(2, "0")}m ${seconds
       .toString()
-      .padStart(2, "0")}m ${seconds.toString().padStart(2, "0")}s`;
+      .padStart(2, "0")}s`;
   }
 }
-
 
 function updateCountdown(type, badgeId) {
   const badge = document.getElementById(badgeId);
   const now = new Date();
-  let nextReset = getNextResetUTC(type);
-  let diff = nextReset - now;
+  const nextReset = getNextResetUTC(type);
+  const diff = nextReset - now;
 
+  // --- Handle reset rollover ---
   if (diff <= 0) {
-    // Smooth rollover
+    let changed = false;
     tasks.forEach(t => {
-      if (t.category === type) t.completed = false;
+      if (t.category === type && t.completed) {
+        t.completed = false;
+        delete t.completedAt;
+        changed = true;
+      }
     });
-    saveTasks();
-    renderTasks();
-    nextReset = getNextResetUTC(type);
-    diff = nextReset - now;
+    if (changed) {
+      saveTasks();
+      renderTasks();
+    }
+    return; // prevent negative countdown flash
   }
 
-  const hours = Math.floor(diff / 3600000);
-  const minutes = Math.floor((diff % 3600000) / 60000);
-  const seconds = Math.floor((diff % 60000) / 1000);
-
-  if (badge)
+  // --- Update countdown display ---
+  if (badge) {
     badge.textContent = `Resets in ${formatResetCountdown(diff)}`;
+  }
+}
+
+function validateTaskResetsOnLoad() {
+  const now = new Date();
+
+  ["daily", "weekly", "monthly"].forEach((type) => {
+    const nextReset = getNextResetUTC(type);
+    const lastReset = new Date(nextReset.getTime() - (type === "daily" ? 86400000 : type === "weekly" ? 7 * 86400000 : 31 * 86400000));
+
+    tasks.forEach(task => {
+      if (task.category === type && task.completedAt) {
+        const completedTime = new Date(task.completedAt);
+        // If the task was completed before the last reset time, unmark it
+        if (completedTime < lastReset) {
+          task.completed = false;
+          delete task.completedAt;
+        }
+      }
+    });
+  });
+
+  saveTasks();
 }
 
 function startCountdowns() {
   setInterval(() => {
-    updateCountdown('daily', 'dailyResetBadge');
-    updateCountdown('weekly', 'weeklyResetBadge');
-    updateCountdown('monthly', 'monthlyResetBadge');
-  }, 1000);
-}
-
-function getNextReset(category) {
-  const now = new Date();
-
-  if (category === "daily") {
-    const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1, 0, 0, 0));
-    return next;
-  }
-
-  if (category === "weekly") {
-    const day = now.getUTCDay(); // Sunday=0 ... Saturday=6
-    const daysUntilWed = (3 - day + 7) % 7 || 7; // next Wednesday (3)
-    const next = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + daysUntilWed, 0, 0, 0));
-    return next;
-  }
-
-  if (category === "monthly") {
-    const nextMonth = now.getUTCMonth() + 1;
-    const nextYear = nextMonth > 11 ? now.getUTCFullYear() + 1 : now.getUTCFullYear();
-    const month = nextMonth % 12;
-    return new Date(Date.UTC(nextYear, month, 1, 0, 0, 0));
-  }
-}
-
-function startResetWatcher() {
-  setInterval(() => {
-    const now = new Date();
-
-    ["daily", "weekly", "monthly"].forEach((category) => {
-      const nextReset = getNextReset(category);
-      const timeDiff = nextReset - now;
-
-      if (timeDiff <= 0) {
-        // Reset all completed tasks for this category
-        const tasks = loadTasks();
-        let changed = false;
-        tasks.forEach(task => {
-          if (task.category === category && task.completed) {
-            task.completed = false;
-            changed = true;
-          }
-        });
-
-        if (changed) {
-          saveTasks(tasks);
-          renderTasks();
-        }
-      }
-    });
+    updateCountdown("daily", "dailyResetBadge");
+    updateCountdown("weekly", "weeklyResetBadge");
+    updateCountdown("monthly", "monthlyResetBadge");
   }, 1000);
 }
 
 // call this once on load
-document.addEventListener("DOMContentLoaded", startResetWatcher);
-
+document.addEventListener("DOMContentLoaded", () => {
+  // existing startup logic ...
+  renderTasks();
+  validateTaskResetsOnLoad(); //check for overdue resets
+  startCountdowns();
+});
