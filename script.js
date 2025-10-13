@@ -541,66 +541,56 @@ function formatResetCountdown(diffMs) {
   const seconds = totalSeconds % 60;
 
   if (days >= 1) {
-    return `${days}d ${hours.toString().padStart(2, "0")}h ${minutes.toString().padStart(2, "0")}m`;
-  } else {
-    return `${hours.toString().padStart(2, "0")}h ${minutes.toString().padStart(2, "0")}m ${seconds
+    return `${days}d ${hours.toString().padStart(2, "0")}h ${minutes
       .toString()
-      .padStart(2, "0")}s`;
+      .padStart(2, "0")}m`;
+  } else {
+    return `${hours.toString().padStart(2, "0")}h ${minutes
+      .toString()
+      .padStart(2, "0")}m ${seconds.toString().padStart(2, "0")}s`;
   }
 }
 
+// --- Helper: reset a category immediately ---
+function performCategoryReset(type) {
+  let changed = false;
+  tasks.forEach(t => {
+    if (t.category === type && t.completed) {
+      t.completed = false;
+      delete t.completedAt;
+      changed = true;
+    }
+  });
+  if (changed) {
+    saveTasks();
+    renderTasks();
+  }
+}
+
+// --- Countdown update + live reset detection ---
 function updateCountdown(type, badgeId) {
   const badge = document.getElementById(badgeId);
   const now = new Date();
   const nextReset = getNextResetUTC(type);
-  const diff = nextReset - now;
+  let diff = nextReset - now;
 
-  // --- Handle reset rollover ---
-  if (diff <= 0) {
-    let changed = false;
-    tasks.forEach(t => {
-      if (t.category === type && t.completed) {
-        t.completed = false;
-        delete t.completedAt;
-        changed = true;
-      }
-    });
-    if (changed) {
-      saveTasks();
-      renderTasks();
-    }
-    return; // prevent negative countdown flash
+  // When diff is less than one second (past or exactly at reset), reset tasks
+  if (diff <= 1000) {
+    performCategoryReset(type);
+    diff = getNextResetUTC(type) - now; // recalc to avoid negative
   }
 
-  // --- Update countdown display ---
   if (badge) {
     badge.textContent = `Resets in ${formatResetCountdown(diff)}`;
   }
 }
 
-function validateTaskResetsOnLoad() {
-  const now = new Date();
-
-  ["daily", "weekly", "monthly"].forEach((type) => {
-    const nextReset = getNextResetUTC(type);
-    const lastReset = new Date(nextReset.getTime() - (type === "daily" ? 86400000 : type === "weekly" ? 7 * 86400000 : 31 * 86400000));
-
-    tasks.forEach(task => {
-      if (task.category === type && task.completedAt) {
-        const completedTime = new Date(task.completedAt);
-        // If the task was completed before the last reset time, unmark it
-        if (completedTime < lastReset) {
-          task.completed = false;
-          delete task.completedAt;
-        }
-      }
-    });
-  });
-
-  saveTasks();
-}
-
+// --- Start timers ---
 function startCountdowns() {
+  // Ensure any outdated completions are cleared at startup
+  validateTaskResetsOnLoad();
+
+  // Tick every second, adjust if browser throttles timers
   setInterval(() => {
     updateCountdown("daily", "dailyResetBadge");
     updateCountdown("weekly", "weeklyResetBadge");

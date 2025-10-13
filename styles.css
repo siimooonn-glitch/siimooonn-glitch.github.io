@@ -49,20 +49,19 @@
 
 html {
   height: 100%;
-}
-
-/* === General Layout === */
-body {
-  height: 100%;
-  background: var(--color-bg);
-  background-repeat: no-repeat;
-  background-attachment: fixed;
   background: linear-gradient(
     180deg,
     var(--color-bg-gradient-top) 0%,
     var(--color-bg-gradient-mid) 78%,
     var(--color-bg-gradient-bottom) 100%
-  );
+  ) fixed;
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+body {
+  min-height: 100%;
+  background: transparent; /* so the html gradient shows through */
   font-family: var(--font-family-base);
   font-size: var(--font-size-base);
   color: var(--color-text-main);
