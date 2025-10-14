@@ -585,6 +585,28 @@ function updateCountdown(type, badgeId) {
   }
 }
 
+function validateTaskResetsOnLoad() {
+  const now = new Date();
+
+  ["daily", "weekly", "monthly"].forEach((type) => {
+    const nextReset = getNextResetUTC(type);
+    const lastReset = new Date(nextReset.getTime() - (type === "daily" ? 86400000 : type === "weekly" ? 7 * 86400000 : 31 * 86400000));
+
+    tasks.forEach(task => {
+      if (task.category === type && task.completedAt) {
+        const completedTime = new Date(task.completedAt);
+        // If the task was completed before the last reset time, unmark it
+        if (completedTime < lastReset) {
+          task.completed = false;
+          delete task.completedAt;
+        }
+      }
+    });
+  });
+
+  saveTasks();
+}
+
 // --- Start timers ---
 function startCountdowns() {
   // Ensure any outdated completions are cleared at startup
